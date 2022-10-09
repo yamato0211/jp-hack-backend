@@ -1,14 +1,16 @@
 version: '3'
 
 services:
-  # db:
-  #   container_name: jphack_db
-  #   hostname: db
-  #   image: postgres:14
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - db_data:/var/lib/postgresql/data
+  db:
+    container_name: jphack_db
+    hostname: postgresserver
+    image: postgres:14
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
   api:
     container_name: jphack_api
     hostname: server
@@ -23,15 +25,16 @@ services:
     volumes:
       - .:/app
     command: /bin/sh -c "cargo watch -x run"
-  # adminer:
-  #   container_name: jphack_adminer
-  #   hostname: adminer
-  #   image: adminer:4.7.5
-  #   restart: always
-  #   ports:
-  #     - 8080:8080
-  #   depends_on:
-  #     - db
+  adminer:
+    container_name: jphack_adminer
+    hostname: adminer
+    image: adminer:4.7.5
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
 
 volumes:
-  db_data: null
+  dbdata: 
+    name: jphack
