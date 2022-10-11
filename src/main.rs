@@ -13,6 +13,7 @@ use actix_web::{
 use anyhow::Result;
 use dotenv::dotenv;
 use graphql::{
+    db::new_pool,
     graphiql,
     graphql,
     playground,
@@ -39,11 +40,12 @@ async fn main() -> Result<()> {
 
     // Schemaオブジェクトをスレッドセーフな型でホランラップする.
     let schema = Arc::new(create_schema());
-
+    let pool = Arc::new(new_pool()?);
     // サーバーの色んな設定.
     let mut server = HttpServer::new(move || {
         App::new()
             .app_data(Data::from(schema.clone()))
+            .app_data(Data::from(pool.clone()))
             .wrap(
                 Cors::default()
                     .allow_any_origin()
