@@ -12,16 +12,23 @@ use juniper_actix::{
     playground_handler,
 };
 
+#[macro_use]
+extern crate diesel;
+
+pub mod db;
 pub mod schemas;
 pub mod resolvers;
 
+use crate::db::{
+    PgPool,
+};
 use crate::schemas::root::{
     Context,
     Schema,
 };
 
 // Actix WebからGraphQLにアクセスするためのハンドラメソッド.
-pub async fn graphql(req: actix_web::HttpRequest, payload: Payload, schema: Data<Schema>) -> Result<HttpResponse, Error> {
+pub async fn graphql(req: actix_web::HttpRequest, payload: Payload, schema: Data<Schema>,pool: Data<PgPool>) -> Result<HttpResponse, Error> {
     // tokenがリクエストヘッダに添付されている場合はSomeを、なければNoneを格納する.
     let token = req
         .headers()
@@ -30,6 +37,7 @@ pub async fn graphql(req: actix_web::HttpRequest, payload: Payload, schema: Data
 
     let context = Context {
         token,
+        pool,
     };
 
     graphql_handler(&schema, &context, req, payload).await
