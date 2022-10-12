@@ -2,6 +2,9 @@ use juniper::GraphQLInputObject;
 use uuid::Uuid;
 use crate::db::users;
 
+pub struct  JWT {
+    pub jwt: String
+}
 
 pub struct User {
     pub id: Uuid,
@@ -32,6 +35,21 @@ impl From<NewUser> for users::UserNewForm {
             name: new_user.name,
             email: new_user.email,
             password: new_user.password
+        }
+    }
+}
+
+#[derive(GraphQLInputObject)]
+pub struct LoginUser {
+    pub email: String,
+    pub password: String
+}
+
+impl From<LoginUser> for users::LoginUserForm {
+    fn from(login_user: LoginUser) -> Self {
+        Self {
+            email: login_user.email,
+            password: login_user.password
         }
     }
 }
