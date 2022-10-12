@@ -1,6 +1,7 @@
 use crate::schemas::{
     root::Context,
     user::User,
+    user::JWT,
 };
 
 
@@ -22,5 +23,12 @@ impl User {
 
     fn email(&self) -> String {
         self.email.clone()
+    }
+}
+
+#[graphql_object(context=Context)]
+impl JWT {
+    fn jwt(&self) -> String {
+        self.jwt.clone()
     }
 }
