@@ -9,12 +9,14 @@ use crate::{
         user::{
             User,
             NewUser,
+            LoginUser,
+            JWT,
         },
     },
 };
 use juniper::{
     FieldResult,
-    graphql_object,
+    graphql_object
 };
 
 use uuid::Uuid;
@@ -31,6 +33,11 @@ impl Query {
         String::from("World!!")
     }
 
+    fn sign_in(context: &Context, login_user: LoginUser) -> FieldResult<JWT>{
+        let jwt = users::Cruds::authentication(&context.pool, login_user.into())?;
+        Ok(JWT{jwt})
+    }
+
     async fn list_user(context: &Context) -> FieldResult<Vec<User>> {
         let users = users::Cruds::all_user(&context.pool)?;
 
@@ -40,7 +47,7 @@ impl Query {
 
 #[graphql_object(context=Context)]
 impl Mutation {
-    fn create_user(context: &Context, new_user: NewUser) -> FieldResult<User> {
+    fn sign_up(context: &Context, new_user: NewUser) -> FieldResult<User> {
         let user = users::Cruds::insert_user(&context.pool, new_user.into())?;
  
         Ok(user.into())
