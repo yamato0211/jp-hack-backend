@@ -18,3 +18,6 @@ log = "0.4.14"
 r2d2 = "0.8.9"
 uuid = { version = "0.8" , features = ["serde", "v4"] }
 pwhash = "1.0.0"
+jsonwebtoken = "8.1.1"
+dotenv = "0.15.0"
+serde = "1.0.145"
