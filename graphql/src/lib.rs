@@ -32,7 +32,7 @@ pub async fn graphql(req: actix_web::HttpRequest, payload: Payload, schema: Data
     // tokenがリクエストヘッダに添付されている場合はSomeを、なければNoneを格納する.
     let token = req
         .headers()
-        .get("token")
+        .get("Authorization")
         .map(|t| t.to_str().unwrap().to_string());
 
     let context = Context {
