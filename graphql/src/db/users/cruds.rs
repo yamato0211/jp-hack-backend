@@ -3,11 +3,12 @@ use crate::db::{
     users::{
         User,
         UserNewForm,
+        LoginUserForm,
     },
     schema::users::dsl::*,
 };
 use actix_web::web::Data;
-use anyhow::Result;
+use anyhow::{Result,Error};
 use diesel::{
     debug_query,
     dsl::{
@@ -18,10 +19,33 @@ use diesel::{
     prelude::*,
 };
 use log::debug;
+use std::string::String;
 use pwhash::bcrypt;
 use uuid::Uuid;
+use dotenv::dotenv;
+use jsonwebtoken::{encode, EncodingKey};
+use chrono::Duration;
+use serde::{Deserialize, Serialize};
 
 pub struct Cruds;
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Claims {
+    exp: i64,
+    user_id: String
+}
+
+fn encode_jwt(user: &User) -> String {
+    dotenv().ok();
+    let secret = dotenv::var("SECRET").unwrap();
+    let mut header = jsonwebtoken::Header::default();
+    header.alg = jsonwebtoken::Algorithm::HS256;
+    let claim = Claims {
+        exp: (chrono::Utc::now() + Duration::hours(8)).timestamp(),
+        user_id: user.id.to_string(),
+    };
+    encode(&header, &claim, &EncodingKey::from_secret(secret.as_ref())).unwrap()
+}
 
 impl Cruds {
     // 全てのUserを配列として返す.
@@ -41,16 +65,6 @@ impl Cruds {
         Ok(query.get_result(&connection)?)
     }
 
-    // key_nameに合致するUserを配列として返す.
-    // pub fn find_by_name(pool: &Data<PgPool>, key_name: String) -> Result<Vec<User>> {
-    //     let connection = pool.get()?;
-    //     let query = users.filter(name.eq(key_name));
-
-    //     let sql = debug_query::<Pg, _>(&query).to_string();
-    //     debug!("{}", sql);
-
-    //     Ok(query.get_results(&connection)?)
-    // }
 
     // new_formを新しい行としてDBに追加し、その行のUserを返す.
     pub fn insert_user(pool: &Data<PgPool>, mut new_form: UserNewForm) -> Result<User> {
@@ -64,16 +78,15 @@ impl Cruds {
         Ok(query.get_result(&connection)?)
     }
 
-    // // key_idに合致するUserの行をupdate_formで更新し、その行のUserを返す.
-    // pub fn update(pool: &Data<PgPool>, key_id: i32, update_form: UserUpdateForm) -> Result<User> {
-    //     let connection = pool.get()?;
-    //     let query = update(users.find(key_id)).set(update_form);
-
-    //     let sql = debug_query::<Pg, _>(&query).to_string();
-    //     debug!("{}", sql);
-
-    //     Ok(query.get_result(&connection)?)
-    // }
+    pub fn authentication(pool: &Data<PgPool>, login_user: LoginUserForm) -> Result<String, Error> {
+        let connection = pool.get()?;
+        let query = users.filter(email.eq(login_user.email));
+        let sql = debug_query::<Pg, _>(&query).to_string();
+        debug!("{}", sql);
+        let user: _ = query.first::<User>(&connection)?;
+        assert_eq!(bcrypt::verify(login_user.password, &user.password),true, "password is Invalid");
+        Ok(encode_jwt(&user))
+    }
 
     // idに合致するUserの行をDBから削除し、その行のUserを返す.
     pub fn delete_user(pool: &Data<PgPool>, key_id: Uuid) -> Result<User> {
