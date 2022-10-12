@@ -23,3 +23,9 @@ pub struct UserNewForm {
     pub password: String
 }
 
+#[derive(Queryable, Clone)]
+pub struct LoginUserForm {
+    pub email: String,
+    pub password: String
+}
+
