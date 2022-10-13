@@ -48,7 +48,7 @@ impl Query {
 #[graphql_object(context=Context)]
 impl Mutation {
     fn sign_up(context: &Context, new_user: NewUser) -> FieldResult<User> {
-        let user = users::Cruds::insert_user(&context.pool, new_user.into())?;
+        let user = users::Cruds::insert_user(&context.pool, new_user.into()).expect("sign up failed");
  
         Ok(user.into())
     }
