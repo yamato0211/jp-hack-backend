@@ -25,7 +25,7 @@ impl Jwt {
         encode(&header, &claim, &EncodingKey::from_secret(secret.as_ref())).unwrap()
     }
 
-    pub fn decode_jwt(jwt_token: &String) -> Option<String> {
+    pub fn decode_jwt(jwt_token: &str) -> Option<String> {
         let secret = dotenv::var("SECRET").unwrap();
         let validation = jsonwebtoken::Validation::default();
         match jsonwebtoken::decode::<Claims>(

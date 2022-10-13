@@ -27,17 +27,18 @@ use crate::schemas::root::{
     Schema,
 };
 
+
 // Actix WebからGraphQLにアクセスするためのハンドラメソッド.
 pub async fn graphql(req: actix_web::HttpRequest, payload: Payload, schema: Data<Schema>,pool: Data<PgPool>) -> Result<HttpResponse, Error> {
     // tokenがリクエストヘッダに添付されている場合はSomeを、なければNoneを格納する.
-    let token = req
+    let bearer_token:Option<String> = req
         .headers()
         .get("Authorization")
         .map(|t| t.to_str().unwrap().to_string());
 
     let context = Context {
-        token,
-        pool,
+        token: bearer_token,
+        pool: pool
     };
 
     graphql_handler(&schema, &context, req, payload).await

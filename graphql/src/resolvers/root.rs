@@ -21,6 +21,20 @@ use juniper::{
 
 use uuid::Uuid;
 
+fn bearer_authorization(bearer_token: Option<String>) -> Option<String> {
+    if bearer_token == None {
+        panic!("Authorization Header is not found");
+    }
+    let bearer_token = bearer_token.unwrap();
+    let token_vec = bearer_token.trim().split(" ").collect::<Vec<&str>>();
+    if token_vec.len() != 2 && token_vec[0] != "Bearer" {
+        panic!("Bearer Authorization failed");
+    }
+    let token = token_vec[1];
+    let user_id = users::Jwt::decode_jwt(token);
+    return user_id;
+}
+
 // 「GraphQLのオブジェクト型」という特徴を付与する.
 #[graphql_object(context=Context)]
 impl Query {
@@ -29,8 +43,12 @@ impl Query {
         Ok(user.into())
     }
 
-    fn hello() -> String {
-        String::from("World!!")
+    fn hello(context: &Context) -> FieldResult<String> {
+        let user_id = bearer_authorization(context.token.clone());
+        if user_id == None {
+            panic!("403 Authorization failed");
+        }
+        Ok(String::from("World!!"))
     }
 
     fn sign_in(context: &Context, login_user: LoginUser) -> FieldResult<JWT>{
@@ -42,6 +60,16 @@ impl Query {
         let users = users::Cruds::all_user(&context.pool)?;
 
         Ok(users.into_iter().map(|u| u.into()).collect())
+    }
+
+    fn get_me(context: &Context) -> FieldResult<User> {
+        let user_id = bearer_authorization(context.token.clone());
+        if user_id == None {
+            panic!("403 Authorization failed");
+        }
+        let user_id = Uuid::parse_str(&user_id.unwrap())?;
+        let me = users::Cruds::find_by_id(&context.pool, user_id).expect("me not found");
+        Ok(me.into())
     }
 }
 
