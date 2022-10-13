@@ -7,6 +7,7 @@ use crate::db::{
     },
     schema::users::dsl::*,
 };
+use super::utils::Jwt;
 use actix_web::web::Data;
 use anyhow::{Result,Error};
 use diesel::{
@@ -22,30 +23,9 @@ use log::debug;
 use std::string::String;
 use pwhash::bcrypt;
 use uuid::Uuid;
-use dotenv::dotenv;
-use jsonwebtoken::{encode, EncodingKey};
-use chrono::Duration;
-use serde::{Deserialize, Serialize};
+
 
 pub struct Cruds;
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Claims {
-    exp: i64,
-    user_id: String
-}
-
-fn encode_jwt(user: &User) -> String {
-    dotenv().ok();
-    let secret = dotenv::var("SECRET").unwrap();
-    let mut header = jsonwebtoken::Header::default();
-    header.alg = jsonwebtoken::Algorithm::HS256;
-    let claim = Claims {
-        exp: (chrono::Utc::now() + Duration::hours(8)).timestamp(),
-        user_id: user.id.to_string(),
-    };
-    encode(&header, &claim, &EncodingKey::from_secret(secret.as_ref())).unwrap()
-}
 
 impl Cruds {
     // 全てのUserを配列として返す.
@@ -85,7 +65,7 @@ impl Cruds {
         debug!("{}", sql);
         let user: _ = query.first::<User>(&connection).expect("user not found");
         assert_eq!(bcrypt::verify(login_user.password, &user.password),true, "password is Invalid");
-        Ok(encode_jwt(&user))
+        Ok(Jwt::encode_jwt(&user))
     }
 
     // idに合致するUserの行をDBから削除し、その行のUserを返す.
