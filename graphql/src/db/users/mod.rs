@@ -1,8 +1,10 @@
 use crate::db::schema::users;
 
 mod cruds;
+mod utils;
 use uuid::Uuid;
 pub use cruds::Cruds;
+pub use utils::Jwt;
 // Identifiable: この構造体がDBのテーブルであることを示す.
 // Queryable: この構造体がDBに問い合わせることができることを示す.
 // Clone: おまけ.
