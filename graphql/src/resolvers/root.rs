@@ -46,7 +46,6 @@ impl Query {
         if user_id == None {
             return Err(Error::AuthorizationError);
         }
-        let _user_id = Uuid::parse_str(&user_id.unwrap()).unwrap();
         let user = users::Cruds::find_by_id(&context.pool, id).expect("user not found");
         Ok(user.into())
     }
@@ -69,7 +68,6 @@ impl Query {
         if user_id == None {
             return Err(Error::AuthorizationError);
         }
-        let _user_id = Uuid::parse_str(&user_id.unwrap()).unwrap();
         let users = users::Cruds::all_user(&context.pool).expect("all user failed");
 
         Ok(users.into_iter().map(|u| u.into()).collect())
@@ -99,7 +97,6 @@ impl Mutation {
         if user_id == None {
             return Err(Error::AuthorizationError);
         }
-        let _user_id = Uuid::parse_str(&user_id.unwrap()).unwrap();
         let user = users::Cruds::delete_user(&context.pool, id).expect("delete user failed");
  
         Ok(user.into())
