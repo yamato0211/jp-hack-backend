@@ -12,6 +12,9 @@ use crate::{
             LoginUser,
             JWT,
         },
+        error::{
+            Error,
+        }
     },
 };
 use juniper::{
@@ -23,12 +26,12 @@ use uuid::Uuid;
 
 fn bearer_authorization(bearer_token: Option<String>) -> Option<String> {
     if bearer_token == None {
-        panic!("Authorization Header is not found");
+        return None;
     }
     let bearer_token = bearer_token.unwrap();
     let token_vec = bearer_token.trim().split(" ").collect::<Vec<&str>>();
     if token_vec.len() != 2 && token_vec[0] != "Bearer" {
-        panic!("Bearer Authorization failed");
+        return None;
     }
     let token = token_vec[1];
     let user_id = users::Jwt::decode_jwt(token);
@@ -38,15 +41,20 @@ fn bearer_authorization(bearer_token: Option<String>) -> Option<String> {
 // 「GraphQLのオブジェクト型」という特徴を付与する.
 #[graphql_object(context=Context)]
 impl Query {
-    fn get_user(context: &Context, id: Uuid) -> FieldResult<User> {
-        let user = users::Cruds::find_by_id(&context.pool, id)?;
+    fn get_user(context: &Context, id: Uuid) -> Result<User, Error> {
+        let user_id = bearer_authorization(context.token.clone());
+        if user_id == None {
+            return Err(Error::AuthorizationError);
+        }
+        let _user_id = Uuid::parse_str(&user_id.unwrap()).unwrap();
+        let user = users::Cruds::find_by_id(&context.pool, id).expect("user not found");
         Ok(user.into())
     }
 
-    fn hello(context: &Context) -> FieldResult<String> {
+    fn hello(context: &Context) -> Result<String, Error> {
         let user_id = bearer_authorization(context.token.clone());
         if user_id == None {
-            panic!("403 Authorization failed");
+            return Err(Error::AuthorizationError);
         }
         Ok(String::from("World!!"))
     }
@@ -56,18 +64,23 @@ impl Query {
         Ok(JWT{jwt})
     }
 
-    async fn list_user(context: &Context) -> FieldResult<Vec<User>> {
-        let users = users::Cruds::all_user(&context.pool)?;
+    async fn list_user(context: &Context) -> Result<Vec<User>, Error> {
+        let user_id = bearer_authorization(context.token.clone());
+        if user_id == None {
+            return Err(Error::AuthorizationError);
+        }
+        let _user_id = Uuid::parse_str(&user_id.unwrap()).unwrap();
+        let users = users::Cruds::all_user(&context.pool).expect("all user failed");
 
         Ok(users.into_iter().map(|u| u.into()).collect())
     }
 
-    fn get_me(context: &Context) -> FieldResult<User> {
+    fn get_me(context: &Context) -> Result<User,Error> {
         let user_id = bearer_authorization(context.token.clone());
         if user_id == None {
-            panic!("403 Authorization failed");
+            return Err(Error::AuthorizationError);
         }
-        let user_id = Uuid::parse_str(&user_id.unwrap())?;
+        let user_id = Uuid::parse_str(&user_id.unwrap()).unwrap();
         let me = users::Cruds::find_by_id(&context.pool, user_id).expect("me not found");
         Ok(me.into())
     }
@@ -81,8 +94,13 @@ impl Mutation {
         Ok(user.into())
     }
 
-    fn delete_user(context: &Context, id: Uuid) -> FieldResult<User> {
-        let user = users::Cruds::delete_user(&context.pool, id)?;
+    fn delete_user(context: &Context, id: Uuid) -> Result<User,Error> {
+        let user_id = bearer_authorization(context.token.clone());
+        if user_id == None {
+            return Err(Error::AuthorizationError);
+        }
+        let _user_id = Uuid::parse_str(&user_id.unwrap()).unwrap();
+        let user = users::Cruds::delete_user(&context.pool, id).expect("delete user failed");
  
         Ok(user.into())
     }
