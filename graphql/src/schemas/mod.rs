@@ -10,6 +10,7 @@ use root::{
 };
 
 pub mod user;
+pub mod error;
 
 pub fn create_schema() -> Schema {
     // Schemaオブジェクトを新規に作成する関数.
